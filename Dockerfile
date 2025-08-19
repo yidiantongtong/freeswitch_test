@@ -1,6 +1,5 @@
 FROM debian:bullseye
-MAINTAINER Andrey Volk <andrey@signalwire.com>
-
+MAINTAINER Tim<yidiantongtong@163.com>
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq install git
 
 RUN git clone https://github.com/signalwire/freeswitch /usr/src/freeswitch
