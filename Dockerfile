@@ -11,7 +11,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq install \
     nasm libogg-dev libspeex-dev libspeexdsp-dev libldns-dev python3-dev \
     libavformat-dev libswscale-dev libavresample-dev liblua5.2-dev \
     libopus-dev libpq-dev libsndfile1-dev libflac-dev libvorbis-dev \
-    libshout3-dev libmpg123-dev libmp3lame-dev
+    libshout3-dev libmpg123-dev libmp3lame-dev libpcre2-dev
 
 # 克隆源码
 RUN git clone https://github.com/signalwire/freeswitch /usr/src/freeswitch
