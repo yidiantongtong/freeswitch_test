@@ -2,8 +2,10 @@
 # 第一阶段：构建环境
 FROM debian:bullseye as builder
 
-# 安装构建依赖 - 合并apt-get命令减少镜像层
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq install \
+# 使用阿里云镜像源并安装构建依赖
+RUN sed -i 's/deb.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list && \
+    sed -i 's/security.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list && \
+    apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq install --no-install-recommends \
     git build-essential cmake automake autoconf libtool pkg-config \
     libssl-dev zlib1g-dev libdb-dev unixodbc-dev libncurses5-dev \
     libexpat1-dev libgdbm-dev bison erlang-dev libtpl-dev libtiff5-dev \
@@ -15,7 +17,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq install \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# 克隆源码 - 使用WORKDIR减少路径硬编码
+# 克隆源码 (使用浅克隆减少大小)
 WORKDIR /usr/src
 RUN git clone --depth 1 https://github.com/signalwire/freeswitch
 RUN mkdir libs && cd libs && \
@@ -45,30 +47,41 @@ RUN PKG_CONFIG_PATH=/usr/lib/pkgconfig cmake . -DCMAKE_INSTALL_PREFIX=/usr && ma
 # 构建 FreeSWITCH
 WORKDIR /usr/src/freeswitch
 RUN ./bootstrap.sh -j
-RUN ./configure --prefix=/opt/freeswitch  # 使用专用目录避免污染系统
+RUN ./configure --prefix=/opt/freeswitch
 RUN make -j$(nproc) && make install
 
 # 第二阶段：运行时环境
 FROM debian:bullseye-slim
 
-# 安装运行时依赖 - 添加缺失的icu库和ca-certificates
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq install \
+# 设置时区
+ENV TZ=UTC
+
+# 使用阿里云镜像源并安装运行时依赖
+RUN sed -i 's/deb.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list && \
+    sed -i 's/security.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list && \
+    apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq install --no-install-recommends \
+    # 核心依赖
     libssl1.1 libpcre3 libedit2 libsqlite3-0 libcurl4 \
-    libogg0 libspeex1 libspeexdsp1 libldns2 libavformat58 \
-    libswscale5 libavresample4 liblua5.2-0 libopus0 \
-    libpq5 libsndfile1 libflac8 libvorbis0a libshout3 \
-    libmpg123-0 libmp3lame0 libicu67 ca-certificates \
+    # 音频处理
+    libogg0 libspeex1 libspeexdsp1 libldns2 libopus0 \
+    libsndfile1 libflac8 libvorbis0a libmpg123-0 libmp3lame0 \
+    # 视频处理
+    libavformat58 libswscale5 libavresample4 \
+    # 数据库和其他
+    libpq5 liblua5.2-0 libicu67 ca-certificates libshout3 \
+    # 修复libldns2找不到的问题
+    libldns2 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# 复制构建结果 - 使用专用安装目录
+# 复制构建结果
 COPY --from=builder /opt/freeswitch /opt/freeswitch
 
 # 创建专用用户
 RUN groupadd freeswitch && \
     useradd -r -g freeswitch -d /opt/freeswitch freeswitch
 
-# 设置目录权限
+# 创建必要目录并设置权限
 RUN mkdir -p /var/log/freeswitch /var/run/freeswitch && \
     chown -R freeswitch:freeswitch /opt/freeswitch /var/log/freeswitch /var/run/freeswitch
 
@@ -81,5 +94,5 @@ WORKDIR /opt/freeswitch
 # 切换非特权用户
 USER freeswitch
 
-# 启动命令 - 添加非前台参数
+# 启动命令
 CMD ["freeswitch", "-nonat"]
