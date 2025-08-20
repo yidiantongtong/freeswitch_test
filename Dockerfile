@@ -56,26 +56,25 @@ FROM debian:bullseye-slim
 # 设置时区
 ENV TZ=UTC
 
-# 使用阿里云镜像源并安装运行时依赖
-RUN sed -i 's/deb.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list && \
-    sed -i 's/security.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list && \
-    apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq install --no-install-recommends \
+# 使用官方镜像源避免包名问题
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq install --no-install-recommends \
     # 核心依赖
     libssl1.1 libpcre3 libedit2 libsqlite3-0 libcurl4 \
     # 音频处理
-    libogg0 libspeex1 libspeexdsp1 libldns2 libopus0 \
+    libogg0 libspeex1 libspeexdsp1 libopus0 \
     libsndfile1 libflac8 libvorbis0a libmpg123-0 libmp3lame0 \
-    # 视频处理
+    # 视频处理 (使用通用包名)
     libavformat58 libswscale5 libavresample4 \
     # 数据库和其他
-    libpq5 liblua5.2-0 libicu67 ca-certificates libshout3 \
-    # 修复libldns2找不到的问题
-    libldns2 \
+    libpq5 liblua5.2-0 libicu67 ca-certificates \
+    # 网络相关
+    libldns-* \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # 复制构建结果
 COPY --from=builder /opt/freeswitch /opt/freeswitch
+COPY --from=builder /etc/freeswitch /etc/freeswitch
 
 # 创建专用用户
 RUN groupadd freeswitch && \
@@ -83,7 +82,7 @@ RUN groupadd freeswitch && \
 
 # 创建必要目录并设置权限
 RUN mkdir -p /var/log/freeswitch /var/run/freeswitch && \
-    chown -R freeswitch:freeswitch /opt/freeswitch /var/log/freeswitch /var/run/freeswitch
+    chown -R freeswitch:freeswitch /opt/freeswitch /etc/freeswitch /var/log/freeswitch /var/run/freeswitch
 
 # 设置环境变量
 ENV PATH="/opt/freeswitch/bin:${PATH}"
