@@ -1,6 +1,6 @@
 # 多阶段构建优化版
 # 第一阶段：构建环境
-FROM debian:bullseye as builder
+FROM registry.cn-hangzhou.aliyuncs.com/aptsafe/debian:bullseye as builder
 
 # 元数据
 LABEL maintainer="Andrey Volk <andrey@signalwire.com>"
