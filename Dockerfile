@@ -63,7 +63,7 @@ RUN ./bootstrap.sh -j && \
 RUN rm -rf /usr/src/*
 
 # 第二阶段：运行时环境 - 使用官方Debian镜像
-FROM debian:bullseye-slim
+FROM dragonwell-registry.cn-hangzhou.cr.aliyuncs.com/dragonwell/dragonwell
 
 # 使用阿里云APT源
 RUN sed -i 's/deb.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list && \
