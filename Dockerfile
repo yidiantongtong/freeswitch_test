@@ -1,6 +1,6 @@
 # 多阶段构建优化版
 # 第一阶段：构建环境 - 使用官方Debian镜像并解决Docker Hub拉取限制
-FROM debian:bullseye as builder
+FROM dragonwell-registry.cn-hangzhou.cr.aliyuncs.com/dragonwell/dragonwell as builder
 
 # 元数据
 LABEL maintainer="Andrey Volk <andrey@signalwire.com>"
