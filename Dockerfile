@@ -1,1 +1,1 @@
-FROM freeswitch/freeswitch
+FROM sofarov/freeswitch
