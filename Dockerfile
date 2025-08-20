@@ -9,9 +9,9 @@ LABEL maintainer="Andrey Volk <andrey@signalwire.com>"
 RUN sed -i 's/deb.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list && \
     sed -i 's/security.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list
 
-# 一次性安装所有依赖
+# 一次性安装所有依赖（移除行内注释）
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq install --no-install-recommends \
-    git ca-certificates \  # 添加CA证书解决Git HTTPS问题
+    git ca-certificates \
     build-essential cmake automake autoconf 'libtool-bin|libtool' pkg-config \
     libssl-dev zlib1g-dev libdb-dev unixodbc-dev libncurses5-dev libexpat1-dev \
     libgdbm-dev bison erlang-dev libtpl-dev libtiff5-dev uuid-dev \
@@ -86,14 +86,15 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq install --no-in
 
 # 复制构建结果
 COPY --from=builder /opt/freeswitch /opt/freeswitch
+COPY --from=builder /etc/freeswitch /etc/freeswitch
 
 # 创建专用用户
 RUN groupadd -r freeswitch && \
     useradd -r -g freeswitch -d /opt/freeswitch -s /bin/bash freeswitch
 
 # 设置权限
-RUN chown -R freeswitch:freeswitch /opt/freeswitch
-RUN mkdir -p /var/{log,run}/freeswitch && \
+RUN chown -R freeswitch:freeswitch /opt/freeswitch /etc/freeswitch && \
+    mkdir -p /var/{log,run}/freeswitch && \
     chown -R freeswitch:freeswitch /var/{log,run}/freeswitch
 
 # 设置环境和工作目录
